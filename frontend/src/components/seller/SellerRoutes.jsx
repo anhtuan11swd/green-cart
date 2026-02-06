@@ -7,7 +7,7 @@ import ProductList from "../../pages/seller/ProductList";
 import SellerLayout from "../../pages/seller/SellerLayout";
 import SellerLogin from "./SellerLogin";
 
-// Component quản lý routing cho seller panel với nested routes
+// Component quản lý routing cho seller panel
 const SellerRoutes = () => {
   const { isSeller } = useContext(AppContext);
 
@@ -18,20 +18,12 @@ const SellerRoutes = () => {
 
   return (
     <Routes>
-      {/* Route cha chứa toàn bộ seller panel */}
-      <Route
-        element={
-          <SellerLayout>
-            {/* Nested routes bên trong layout */}
-            <Routes>
-              <Route element={<AddProduct />} index />
-              <Route element={<ProductList />} path="product-list" />
-              <Route element={<Orders />} path="orders" />
-            </Routes>
-          </SellerLayout>
-        }
-        path="/*"
-      />
+      <Route element={<SellerLayout />} path="/seller">
+        <Route element={<AddProduct />} index />
+        <Route element={<AddProduct />} path="add-product" />
+        <Route element={<ProductList />} path="product-list" />
+        <Route element={<Orders />} path="orders" />
+      </Route>
     </Routes>
   );
 };
