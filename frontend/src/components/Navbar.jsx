@@ -3,7 +3,7 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import { assets } from "../assets/assets";
 import { useAppContext } from "../context";
 
-// Component thanh điều hướng chính với chức năng tìm kiếm và menu responsive
+// Component thanh điều hướng chính với chức năng tìm kiếm, giỏ hàng và menu responsive
 const Navbar = () => {
   const { user, searchTerm, setSearchTerm, getCartCount } = useAppContext();
   const location = useLocation();
@@ -50,12 +50,14 @@ const Navbar = () => {
       </Link>
 
       <div className="hidden md:flex items-center gap-8">
-        <button
-          className="opacity-80 hover:opacity-100 px-3 py-1 border border-gray-300 rounded-full text-xs transition-opacity cursor-pointer"
-          type="button"
-        >
-          Bảng điều khiển người bán
-        </button>
+        <Link to="/seller">
+          <button
+            className="opacity-80 hover:opacity-100 px-3 py-1 border border-gray-300 rounded-full text-xs transition-opacity cursor-pointer"
+            type="button"
+          >
+            Bảng điều khiển người bán
+          </button>
+        </Link>
 
         <div className="flex items-center gap-6">
           {navigation.map((item) => (
@@ -182,12 +184,14 @@ const Navbar = () => {
               ))}
             </div>
 
-            <button
-              className="opacity-80 px-3 py-2 border border-gray-300 rounded-full w-full text-sm text-left"
-              type="button"
-            >
-              Bảng điều khiển người bán
-            </button>
+            <Link onClick={closeMobileMenu} to="/seller">
+              <button
+                className="opacity-80 px-3 py-2 border border-gray-300 rounded-full w-full text-sm text-left"
+                type="button"
+              >
+                Bảng điều khiển người bán
+              </button>
+            </Link>
 
             <div className="pt-2 border-gray-200 border-t">
               {user ? (

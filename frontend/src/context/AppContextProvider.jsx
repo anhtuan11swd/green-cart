@@ -14,7 +14,10 @@ const formatVND = (price) => {
 export const AppContextProvider = ({ children }) => {
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
-  const [isSeller, setIsSeller] = useState(false);
+  const [isSeller, setIsSeller] = useState(() => {
+    // Khởi tạo isSeller từ localStorage
+    return JSON.parse(localStorage.getItem("isSeller") || "false");
+  });
   const [searchTerm, setSearchTerm] = useState("");
   const [cartItems, setCartItems] = useState([]);
 
@@ -31,6 +34,11 @@ export const AppContextProvider = ({ children }) => {
     // Dispatch event để các component khác cập nhật
     window.dispatchEvent(new Event("cartUpdated"));
   }, [cartItems]);
+
+  // Lưu isSeller state vào localStorage
+  useEffect(() => {
+    localStorage.setItem("isSeller", JSON.stringify(isSeller));
+  }, [isSeller]);
 
   // Thêm sản phẩm vào giỏ hàng
   const addToCart = async (itemId) => {
