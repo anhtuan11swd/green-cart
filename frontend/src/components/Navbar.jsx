@@ -1,11 +1,12 @@
 import { useEffect, useState } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { assets } from "../assets/assets";
 import { useAppContext } from "../context/AppContext";
 
 const Navbar = () => {
-  const { user } = useAppContext();
+  const { user, searchTerm, setSearchTerm } = useAppContext();
   const location = useLocation();
+  const navigate = useNavigate();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [cartCount, setCartCount] = useState(0);
 
@@ -37,6 +38,16 @@ const Navbar = () => {
     setMobileMenuOpen(false);
   };
 
+  const handleSearchChange = (e) => {
+    const value = e.target.value;
+    setSearchTerm(value);
+
+    // Nếu đang không ở trang products và có từ khóa tìm kiếm, chuyển đến trang products
+    if (location.pathname !== "/products" && value.trim() !== "") {
+      navigate("/products");
+    }
+  };
+
   const navigation = [
     { current: location.pathname === "/", href: "/", name: "Trang chủ" },
     {
@@ -47,18 +58,18 @@ const Navbar = () => {
   ];
 
   return (
-    <nav className="flex items-center justify-between px-6 md:px-16 lg:px-24 xl:px-32 py-4 border-b border-gray-300 bg-white sticky top-0 z-50">
+    <nav className="top-0 z-50 sticky flex justify-between items-center bg-white px-6 md:px-16 lg:px-24 xl:px-32 py-4 border-gray-300 border-b">
       <Link className="flex items-center" to="/">
         <img
           alt="Green Cart Logo"
-          className="cursor-pointer w-34 md:w-38 h-auto"
+          className="w-34 md:w-38 h-auto cursor-pointer"
           src={assets.logo}
         />
       </Link>
 
       <div className="hidden md:flex items-center gap-8">
         <button
-          className="border border-gray-300 px-3 py-1 rounded-full text-xs cursor-pointer opacity-80 hover:opacity-100 transition-opacity"
+          className="opacity-80 hover:opacity-100 px-3 py-1 border border-gray-300 rounded-full text-xs transition-opacity cursor-pointer"
           type="button"
         >
           Bảng điều khiển người bán
@@ -80,11 +91,13 @@ const Navbar = () => {
           ))}
         </div>
 
-        <div className="flex items-center text-sm gap-2 border border-gray-300 px-3 py-2 rounded-full max-lg:hidden bg-white">
+        <div className="max-lg:hidden flex items-center gap-2 bg-white px-3 py-2 border border-gray-300 rounded-full text-sm">
           <input
-            className="w-full bg-transparent outline-none placeholder-gray-500 text-gray-700"
+            className="bg-transparent outline-none w-full text-gray-700 placeholder-gray-500"
+            onChange={handleSearchChange}
             placeholder="Tìm kiếm sản phẩm"
             type="text"
+            value={searchTerm}
           />
           <img
             alt="search"
@@ -97,11 +110,11 @@ const Navbar = () => {
           <Link to="/cart">
             <img
               alt="cart"
-              className="w-6 opacity-80 hover:opacity-100 transition-opacity"
+              className="opacity-80 hover:opacity-100 w-6 transition-opacity"
               src={assets.cart_icon}
             />
             {cartCount > 0 && (
-              <span className="absolute -top-2 -right-2 bg-primary text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+              <span className="-top-2 -right-2 absolute flex justify-center items-center bg-primary rounded-full w-5 h-5 text-white text-xs">
                 {cartCount > 99 ? "99+" : cartCount}
               </span>
             )}
@@ -112,11 +125,11 @@ const Navbar = () => {
           <div className="flex items-center gap-3">
             <img
               alt="Profile"
-              className="w-8 h-8 rounded-full cursor-pointer"
+              className="rounded-full w-8 h-8 cursor-pointer"
               src={assets.profile_icon}
             />
             <button
-              className="px-6 py-2 bg-primary hover:bg-red-600 transition text-white rounded-full"
+              className="bg-primary hover:bg-red-600 px-6 py-2 rounded-full text-white transition"
               onClick={() => {
                 console.log("Đăng xuất");
               }}
@@ -128,7 +141,7 @@ const Navbar = () => {
         ) : (
           <Link to="/login">
             <button
-              className="px-8 py-2 bg-primary hover:bg-primary-dull transition text-white rounded-full"
+              className="bg-primary hover:bg-primary-dull px-8 py-2 rounded-full text-white transition"
               type="button"
             >
               Đăng nhập
@@ -137,12 +150,12 @@ const Navbar = () => {
         )}
       </div>
 
-      <div className="flex items-center gap-4 md:hidden">
+      <div className="md:hidden flex items-center gap-4">
         <div className="relative cursor-pointer">
           <Link to="/cart">
-            <img alt="cart" className="w-6 opacity-80" src={assets.cart_icon} />
+            <img alt="cart" className="opacity-80 w-6" src={assets.cart_icon} />
             {cartCount > 0 && (
-              <span className="absolute -top-2 -right-2 bg-primary text-white text-xs rounded-full h-4 w-4 flex items-center justify-center text-[10px]">
+              <span className="-top-2 -right-2 absolute flex justify-center items-center bg-primary rounded-full w-4 h-4 text-[10px] text-white text-xs">
                 {cartCount > 9 ? "9+" : cartCount}
               </span>
             )}
@@ -155,13 +168,15 @@ const Navbar = () => {
       </div>
 
       {mobileMenuOpen && (
-        <div className="absolute top-full left-0 right-0 bg-white border-b border-gray-300 md:hidden shadow-lg">
-          <div className="px-6 py-4 space-y-4">
-            <div className="flex items-center gap-2 border border-gray-300 px-3 py-2 rounded-full bg-white">
+        <div className="md:hidden top-full right-0 left-0 absolute bg-white shadow-lg border-gray-300 border-b">
+          <div className="space-y-4 px-6 py-4">
+            <div className="flex items-center gap-2 bg-white px-3 py-2 border border-gray-300 rounded-full">
               <input
-                className="w-full bg-transparent outline-none placeholder-gray-500 text-gray-700 text-sm"
+                className="bg-transparent outline-none w-full text-gray-700 text-sm placeholder-gray-500"
+                onChange={handleSearchChange}
                 placeholder="Tìm kiếm sản phẩm"
                 type="text"
+                value={searchTerm}
               />
               <img
                 alt="search"
@@ -186,18 +201,18 @@ const Navbar = () => {
             </div>
 
             <button
-              className="w-full text-left border border-gray-300 px-3 py-2 rounded-full text-sm opacity-80"
+              className="opacity-80 px-3 py-2 border border-gray-300 rounded-full w-full text-sm text-left"
               type="button"
             >
               Bảng điều khiển người bán
             </button>
 
-            <div className="pt-2 border-t border-gray-200">
+            <div className="pt-2 border-gray-200 border-t">
               {user ? (
                 <div className="flex items-center gap-3">
                   <img
                     alt="Profile"
-                    className="w-8 h-8 rounded-full"
+                    className="rounded-full w-8 h-8"
                     src={assets.profile_icon}
                   />
                   <span className="text-gray-700">
@@ -207,7 +222,7 @@ const Navbar = () => {
               ) : (
                 <Link onClick={closeMobileMenu} to="/login">
                   <button
-                    className="w-full px-6 py-2 bg-primary hover:bg-primary-dull transition text-white rounded-full"
+                    className="bg-primary hover:bg-primary-dull px-6 py-2 rounded-full w-full text-white transition"
                     type="button"
                   >
                     Đăng nhập

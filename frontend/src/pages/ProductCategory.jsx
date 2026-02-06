@@ -1,28 +1,32 @@
 import { useMemo } from "react";
+import { useParams } from "react-router-dom";
 import { dummyProducts } from "../assets/assets";
 import ProductCard from "../components/ProductCard";
 import { useAppContext } from "../context/AppContext";
 
-const Product = () => {
+const ProductCategory = () => {
+  const { category } = useParams();
   const { searchTerm } = useAppContext();
 
-  // Lọc sản phẩm có inStock = true và tìm kiếm theo tên
+  // Lọc sản phẩm theo category, inStock = true và tìm kiếm theo tên
   const filteredProducts = useMemo(() => {
-    const inStockProducts = dummyProducts.filter((product) => product.inStock);
+    const categoryProducts = dummyProducts.filter(
+      (product) => product.category === category && product.inStock,
+    );
 
     if (searchTerm.trim() === "") {
-      return inStockProducts;
+      return categoryProducts;
     } else {
-      return inStockProducts.filter((product) =>
+      return categoryProducts.filter((product) =>
         product.name.toLowerCase().includes(searchTerm.toLowerCase()),
       );
     }
-  }, [searchTerm]);
+  }, [category, searchTerm]);
 
   return (
     <div className="flex flex-col mt-16">
       <div className="flex flex-col items-end w-max">
-        <p className="font-medium text-2xl uppercase">Tất cả sản phẩm</p>
+        <p className="font-medium text-2xl uppercase">{category}</p>
         <div className="bg-primary rounded-full w-16 h-0.5"></div>
       </div>
 
@@ -34,7 +38,7 @@ const Product = () => {
         ) : (
           <div className="col-span-full py-12 text-center">
             <p className="text-gray-500 text-lg">
-              Không tìm thấy sản phẩm nào phù hợp
+              Không tìm thấy sản phẩm nào trong danh mục này
             </p>
           </div>
         )}
@@ -43,4 +47,4 @@ const Product = () => {
   );
 };
 
-export default Product;
+export default ProductCategory;

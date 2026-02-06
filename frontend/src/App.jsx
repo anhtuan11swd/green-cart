@@ -5,6 +5,8 @@ import Cart from "./pages/Cart";
 import Home from "./pages/Home";
 import Login from "./pages/Login";
 import Product from "./pages/Product";
+import ProductCategory from "./pages/ProductCategory";
+import ProductDetails from "./pages/ProductDetails";
 
 function App() {
   return (
@@ -13,8 +15,9 @@ function App() {
       <div className="px-6 md:px-16 lg:px-24 xl:px-32">
         <Routes>
           <Route element={<Home />} path="/" />
-          <Route element={<Home />} path="/all-products" />
-          <Route element={<Product />} path="/product/:id" />
+          <Route element={<ProductCategory />} path="/products/:category" />
+          <Route element={<Product />} path="/products" />
+          <Route element={<ProductDetails />} path="/product/:id" />
           <Route element={<Cart />} path="/cart" />
           <Route element={<Login />} path="/login" />
         </Routes>
