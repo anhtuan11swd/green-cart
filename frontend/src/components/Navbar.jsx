@@ -1,34 +1,16 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { assets } from "../assets/assets";
-import { useAppContext } from "../context/AppContext";
+import { useAppContext } from "../context";
 
+// Component thanh điều hướng chính với chức năng tìm kiếm và menu responsive
 const Navbar = () => {
-  const { user, searchTerm, setSearchTerm } = useAppContext();
+  const { user, searchTerm, setSearchTerm, getCartCount } = useAppContext();
   const location = useLocation();
   const navigate = useNavigate();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [cartCount, setCartCount] = useState(0);
 
-  // Đồng bộ hóa số lượng giỏ hàng với localStorage và lắng nghe cập nhật từ các component khác
-  useEffect(() => {
-    const getCartCount = () => {
-      const cartCount = localStorage.getItem("cartCount") || 0;
-      setCartCount(parseInt(cartCount, 10));
-    };
-
-    getCartCount();
-
-    const handleCartUpdate = () => {
-      getCartCount();
-    };
-
-    window.addEventListener("cartUpdated", handleCartUpdate);
-
-    return () => {
-      window.removeEventListener("cartUpdated", handleCartUpdate);
-    };
-  }, []);
+  const cartCount = getCartCount();
 
   const toggleMobileMenu = () => {
     setMobileMenuOpen(!mobileMenuOpen);

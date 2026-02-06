@@ -2,12 +2,13 @@ import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { assets, dummyProducts } from "../assets/assets";
 import ProductCard from "../components/ProductCard";
-import { useAppContext } from "../context/AppContext";
+import { useAppContext } from "../context";
 
+// Trang chi tiết sản phẩm với gallery ảnh và sản phẩm liên quan
 const ProductDetails = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { formatVND } = useAppContext();
+  const { formatVND, addToCart } = useAppContext();
   const [product, setProduct] = useState(null);
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
 
@@ -30,40 +31,24 @@ const ProductDetails = () => {
       .slice(0, 5);
   }, [product]);
 
-  // Quản lý việc thêm sản phẩm vào giỏ hàng với localStorage
-  const addToCart = () => {
+  const handleAddToCart = async () => {
     if (!product) return;
 
-    const currentCart = JSON.parse(localStorage.getItem("cart") || "[]");
-
-    const existingProductIndex = currentCart.findIndex(
-      (item) => item._id === product._id,
-    );
-
-    if (existingProductIndex >= 0) {
-      currentCart[existingProductIndex].quantity += 1;
-    } else {
-      currentCart.push({
-        ...product,
-        quantity: 1,
-      });
+    try {
+      await addToCart(product._id);
+    } catch (error) {
+      console.error("Lỗi khi thêm sản phẩm vào giỏ:", error);
     }
-
-    localStorage.setItem("cart", JSON.stringify(currentCart));
-
-    const totalItems = currentCart.reduce(
-      (sum, item) => sum + item.quantity,
-      0,
-    );
-    localStorage.setItem("cartCount", totalItems.toString());
-
-    window.dispatchEvent(new Event("cartUpdated"));
   };
 
-  const buyNow = () => {
+  const buyNow = async () => {
     // Thêm vào giỏ và chuyển đến trang thanh toán
-    addToCart();
-    navigate("/cart");
+    try {
+      await addToCart(product._id);
+      navigate("/cart");
+    } catch (error) {
+      console.error("Lỗi khi thêm sản phẩm vào giỏ:", error);
+    }
   };
 
   if (!product) {
@@ -185,7 +170,7 @@ const ProductDetails = () => {
           <div className="flex items-center gap-4 mt-10 text-base">
             <button
               className="bg-gray-100 hover:bg-gray-200 py-3.5 w-full font-medium text-gray-800/80 transition-colors cursor-pointer"
-              onClick={addToCart}
+              onClick={handleAddToCart}
               type="button"
             >
               Thêm vào giỏ hàng

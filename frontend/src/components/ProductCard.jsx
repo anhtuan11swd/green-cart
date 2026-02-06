@@ -1,41 +1,22 @@
 import { useNavigate } from "react-router-dom";
 import { assets } from "../assets/assets";
-import { useAppContext } from "../context/AppContext";
+import { useAppContext } from "../context";
 
+// Component hiển thị thông tin sản phẩm dạng thẻ với chức năng thêm vào giỏ hàng
 const ProductCard = ({ product }) => {
   const navigate = useNavigate();
-  const { formatVND } = useAppContext();
+  const { formatVND, addToCart } = useAppContext();
 
   const goToProductDetails = () => {
     navigate(`/product/${product._id}`);
   };
 
-  // Quản lý việc thêm sản phẩm vào giỏ hàng với localStorage
-  const addToCart = () => {
-    const currentCart = JSON.parse(localStorage.getItem("cart") || "[]");
-
-    const existingProductIndex = currentCart.findIndex(
-      (item) => item._id === product._id,
-    );
-
-    if (existingProductIndex >= 0) {
-      currentCart[existingProductIndex].quantity += 1;
-    } else {
-      currentCart.push({
-        ...product,
-        quantity: 1,
-      });
+  const handleAddToCart = async () => {
+    try {
+      await addToCart(product._id);
+    } catch (error) {
+      console.error("Lỗi khi thêm sản phẩm vào giỏ:", error);
     }
-
-    localStorage.setItem("cart", JSON.stringify(currentCart));
-
-    const totalItems = currentCart.reduce(
-      (sum, item) => sum + item.quantity,
-      0,
-    );
-    localStorage.setItem("cartCount", totalItems.toString());
-
-    window.dispatchEvent(new Event("cartUpdated"));
   };
 
   return (
@@ -96,7 +77,7 @@ const ProductCard = ({ product }) => {
           <div className="text-primary">
             <button
               className="flex items-center cursor-pointer justify-center gap-1 bg-primary/10 border border-primary/40 px-2 md:w-20 w-16 h-8.5 rounded"
-              onClick={addToCart}
+              onClick={handleAddToCart}
               type="button"
             >
               <img alt="cart_icon" className="w-3.5" src={assets.cart_icon} />
