@@ -5,6 +5,7 @@ import express from "express";
 import connectCloudinary from "./configs/cloudinary.js";
 import connectDB from "./configs/db.js";
 import { autoSeedProducts } from "./controllers/seed.js";
+import orderRoutes from "./routes/order.js";
 import productRoutes from "./routes/product.js";
 import seedRoutes from "./routes/seed.js";
 import sellerRoutes from "./routes/seller.js";
@@ -30,6 +31,7 @@ app.get("/", (_req, res) => {
   res.json({ message: "Chào mừng đến với Green Cart API" });
 });
 
+app.use("/api/order", orderRoutes);
 app.use("/api/user", userRoutes);
 app.use("/api/seller", sellerRoutes);
 app.use("/api/product", productRoutes);
