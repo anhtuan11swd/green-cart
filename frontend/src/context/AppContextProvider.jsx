@@ -1,6 +1,26 @@
-import { useEffect, useState } from "react";
+import axios from "axios";
+import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { AppContext } from "./AppContext";
+
+// Cấu hình Axios instance với Bearer token
+const api = axios.create({
+  baseURL: import.meta.env.VITE_BACKEND_URL,
+});
+
+// Thiết lập interceptor ngay khi module được load
+api.interceptors.request.use(
+  (config) => {
+    const token = localStorage.getItem("sellerToken");
+    if (token) {
+      config.headers.Authorization = token;
+    }
+    return config;
+  },
+  (error) => {
+    return Promise.reject(error);
+  },
+);
 
 // Hàm định dạng giá tiền theo chuẩn Việt Nam
 const formatVND = (price) => {
@@ -14,17 +34,25 @@ const formatVND = (price) => {
 export const AppContextProvider = ({ children }) => {
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
+  const [sellerToken, setSellerToken] = useState(() => {
+    return localStorage.getItem("sellerToken") || null;
+  });
   const [isSeller, setIsSeller] = useState(() => {
-    // Khởi tạo isSeller từ localStorage
     return JSON.parse(localStorage.getItem("isSeller") || "false");
   });
   const [searchTerm, setSearchTerm] = useState("");
-  const [cartItems, setCartItems] = useState([]);
+  const [cartItems, setCartItems] = useState(() => {
+    return JSON.parse(localStorage.getItem("cart") || "[]");
+  });
 
+  // Lưu sellerToken vào localStorage khi thay đổi
   useEffect(() => {
-    const savedCart = JSON.parse(localStorage.getItem("cart") || "[]");
-    setCartItems(savedCart);
-  }, []);
+    if (sellerToken) {
+      localStorage.setItem("sellerToken", sellerToken);
+    } else {
+      localStorage.removeItem("sellerToken");
+    }
+  }, [sellerToken]);
 
   useEffect(() => {
     localStorage.setItem("cart", JSON.stringify(cartItems));
@@ -40,15 +68,17 @@ export const AppContextProvider = ({ children }) => {
     localStorage.setItem("isSeller", JSON.stringify(isSeller));
   }, [isSeller]);
 
+  // Function để logout seller
+  const logoutSeller = useCallback(() => {
+    setSellerToken(null);
+    setIsSeller(false);
+  }, []);
+
   // Thêm sản phẩm vào giỏ hàng
   const addToCart = async (itemId) => {
     try {
-      const response = await fetch(
-        `${import.meta.env.VITE_BACKEND_URL}/api/product/${itemId}`,
-      );
-      if (!response.ok) throw new Error("Không thể tải thông tin sản phẩm");
-
-      const product = await response.json();
+      const response = await api.get(`/api/product/${itemId}`);
+      const product = response.data;
 
       setCartItems((prevCart) => {
         const existingItem = prevCart.find((item) => item._id === itemId);
@@ -128,20 +158,68 @@ export const AppContextProvider = ({ children }) => {
     );
   };
 
+  // Function để login seller
+  const loginSeller = (token) => {
+    setSellerToken(token);
+    setIsSeller(true);
+  };
+
+  // Product management functions for sellers
+  const addProduct = async (productData) => {
+    try {
+      const response = await api.post("/api/product/add", productData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      });
+      return response.data;
+    } catch (error) {
+      console.error("Lỗi khi thêm sản phẩm:", error);
+      throw error;
+    }
+  };
+
+  const getAllProducts = async () => {
+    try {
+      const response = await api.get("/api/product/list");
+      return response.data.products;
+    } catch (error) {
+      console.error("Lỗi khi lấy danh sách sản phẩm:", error);
+      throw error;
+    }
+  };
+
+  const toggleProductStock = async (productId) => {
+    try {
+      const response = await api.post(`/api/product/stock/${productId}`);
+      return response.data;
+    } catch (error) {
+      console.error("Lỗi khi cập nhật trạng thái tồn kho:", error);
+      throw error;
+    }
+  };
+
   const value = {
+    addProduct,
     addToCart,
+    api, // Axios instance với Bearer token
     // Cart functions
     cartItems,
     formatVND,
+    getAllProducts,
     getCartAmount,
     getCartCount,
     isSeller,
+    loginSeller,
+    logoutSeller,
     navigate,
     removeFromCart,
     searchTerm,
+    sellerToken,
     setIsSeller,
     setSearchTerm,
     setUser,
+    toggleProductStock,
     updateCart,
     user,
   };

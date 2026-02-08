@@ -1,13 +1,15 @@
 import { useContext, useState } from "react";
+import toast from "react-hot-toast";
 import { AppContext } from "../../context/AppContext";
 
 const SellerLogin = () => {
-  const { setIsSeller, navigate } = useContext(AppContext);
+  const { api, loginSeller, navigate } = useContext(AppContext);
   const [formData, setFormData] = useState({
     email: "admin@example.com",
     password: "greatstack123",
   });
   const [errors, setErrors] = useState({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Hàm validate dữ liệu form đăng nhập
   const validateForm = () => {
@@ -28,22 +30,30 @@ const SellerLogin = () => {
   };
 
   // Xử lý submit form đăng nhập
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
     if (!validateForm()) {
       return;
     }
 
-    // Kiểm tra thông tin đăng nhập (hard-coded credentials)
-    if (
-      formData.email === "admin@example.com" &&
-      formData.password === "greatstack123"
-    ) {
-      setIsSeller(true);
-      navigate("/seller");
-    } else {
-      setErrors({ general: "Email hoặc mật khẩu không đúng" });
+    setIsSubmitting(true);
+
+    try {
+      const response = await api.post("/api/seller/login", formData);
+
+      if (response.data.success) {
+        toast.success(response.data.message);
+        loginSeller(response.data.token);
+        navigate("/seller");
+      }
+    } catch (error) {
+      const errorMessage =
+        error.response?.data?.message || "Đăng nhập thất bại";
+      setErrors({ general: errorMessage });
+      toast.error(errorMessage);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -123,10 +133,15 @@ const SellerLogin = () => {
             )}
 
             <button
-              className="bg-primary text-white w-full py-2 rounded-md cursor-pointer hover:bg-primary/90 transition-colors"
+              className={`bg-primary text-white w-full py-2 rounded-md transition-colors ${
+                isSubmitting
+                  ? "opacity-50 cursor-not-allowed"
+                  : "cursor-pointer hover:bg-primary/90"
+              }`}
+              disabled={isSubmitting}
               type="submit"
             >
-              Đăng nhập
+              {isSubmitting ? "ĐANG ĐĂNG NHẬP..." : "ĐĂNG NHẬP"}
             </button>
           </div>
         </form>

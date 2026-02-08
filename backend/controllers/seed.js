@@ -604,12 +604,7 @@ export const seedProducts = async (_req, res) => {
         }
       }
 
-      // Nếu không upload được ảnh, dùng placeholder
-      if (imageUrls.length === 0) {
-        imageUrls.push(
-          `https://via.placeholder.com/300x300?text=${encodeURIComponent(product.name)}`,
-        );
-      }
+      // Nếu không upload được ảnh, bỏ qua
 
       productsWithImages.push({
         ...product,
@@ -667,13 +662,7 @@ export const autoSeedProducts = async () => {
         }
       }
 
-      // Nếu không upload được ảnh, dùng placeholder
-      if (imageUrls.length === 0) {
-        imageUrls.push(
-          `https://via.placeholder.com/300x300?text=${encodeURIComponent(product.name)}`,
-        );
-      }
-
+      // Nếu không upload được ảnh, bỏ qua
       productsWithImages.push({
         ...product,
         image: imageUrls,

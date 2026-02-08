@@ -1,9 +1,10 @@
 import { useContext, useState } from "react";
+import { toast } from "react-hot-toast";
 import { assets, categories } from "../../assets/assets";
 import { AppContext } from "../../context/AppContext";
 
 const AddProduct = () => {
-  const { formatVND } = useContext(AppContext);
+  const { formatVND, addProduct, navigate } = useContext(AppContext);
 
   const [files, setFiles] = useState([null, null, null, null]);
   const [name, setName] = useState("");
@@ -145,14 +146,14 @@ const AddProduct = () => {
       formData.append("inStock", true);
 
       // Thêm images vào FormData
-      files.forEach((file, index) => {
+      files.forEach((file) => {
         if (file) {
-          formData.append(`image${index}`, file);
+          formData.append("images", file);
         }
       });
 
-      // TODO: Gọi API để thêm sản phẩm
-      console.log("Product data:", Object.fromEntries(formData));
+      // Gọi API để thêm sản phẩm
+      await addProduct(formData);
 
       // Reset form sau khi submit thành công
       setFiles([null, null, null, null]);
@@ -164,12 +165,18 @@ const AddProduct = () => {
       setErrors({});
 
       // Thông báo thành công
-      alert("Thêm sản phẩm thành công!");
+      toast.success("Thêm sản phẩm thành công!");
+      // Chuyển hướng về trang danh sách sản phẩm
+      navigate("/seller/products");
     } catch (error) {
       console.error("Lỗi khi thêm sản phẩm:", error);
+      const errorMessage =
+        error.response?.data?.message ||
+        "Có lỗi xảy ra khi thêm sản phẩm. Vui lòng thử lại.";
       setErrors({
-        submit: "Có lỗi xảy ra khi thêm sản phẩm. Vui lòng thử lại.",
+        submit: errorMessage,
       });
+      toast.error(errorMessage);
     } finally {
       setIsSubmitting(false);
     }
