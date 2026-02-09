@@ -1,10 +1,11 @@
 import { useState } from "react";
+import toast from "react-hot-toast";
 import { assets } from "../assets/assets";
 import { useAppContext } from "../context/AppContext";
 
 // Trang thêm địa chỉ giao hàng với validation form
 const AddAddress = () => {
-  const { navigate } = useAppContext();
+  const { navigate, userToken } = useAppContext();
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     city: "",
@@ -47,22 +48,24 @@ const AddAddress = () => {
         (field) => !formData[field].trim(),
       );
       if (missingFields.length > 0) {
-        alert(`Vui lòng điền đầy đủ thông tin: ${missingFields.join(", ")}`);
+        toast.error(
+          `Vui lòng điền đầy đủ thông tin: ${missingFields.join(", ")}`,
+        );
         return;
       }
 
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
       if (!emailRegex.test(formData.email)) {
-        alert("Email không hợp lệ");
+        toast.error("Email không hợp lệ");
         return;
       }
 
       const response = await fetch(
-        `${import.meta.env.VITE_BACKEND_URL}/api/user/add-address`,
+        `${import.meta.env.VITE_BACKEND_URL}/api/user/address/add`,
         {
           body: JSON.stringify(formData),
           headers: {
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
+            Authorization: `Bearer ${userToken}`,
             "Content-Type": "application/json",
           },
           method: "POST",
@@ -72,14 +75,14 @@ const AddAddress = () => {
       const data = await response.json();
 
       if (response.ok) {
-        alert("Địa chỉ đã được lưu thành công!");
+        toast.success("Địa chỉ đã được lưu thành công!");
         navigate("/cart");
       } else {
-        alert(data.message || "Có lỗi xảy ra khi lưu địa chỉ");
+        toast.error(data.message || "Có lỗi xảy ra khi lưu địa chỉ");
       }
     } catch (error) {
       console.error("Error saving address:", error);
-      alert("Có lỗi xảy ra khi kết nối server");
+      toast.error("Có lỗi xảy ra khi kết nối server");
     } finally {
       setLoading(false);
     }

@@ -1,5 +1,7 @@
 import jwt from "jsonwebtoken";
+import mongoose from "mongoose";
 import Address from "../models/Address.js";
+import Product from "../models/Product.js";
 import User from "../models/User.js";
 
 export const register = async (req, res) => {
@@ -18,13 +20,6 @@ export const register = async (req, res) => {
       process.env.JWT_SECRET,
       { expiresIn: process.env.JWT_EXPIRE },
     );
-
-    res.cookie("token", token, {
-      httpOnly: true,
-      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
-      sameSite: "strict",
-      secure: process.env.NODE_ENV === "production",
-    });
 
     return res.status(201).json({
       message: "Đăng ký thành công",
@@ -72,13 +67,6 @@ export const login = async (req, res) => {
       { expiresIn: process.env.JWT_EXPIRE },
     );
 
-    res.cookie("token", token, {
-      httpOnly: true,
-      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
-      sameSite: "strict",
-      secure: process.env.NODE_ENV === "production",
-    });
-
     return res.status(200).json({
       message: "Đăng nhập thành công",
       success: true,
@@ -97,9 +85,22 @@ export const login = async (req, res) => {
 
 export const isAuth = async (req, res) => {
   try {
-    const user = await User.findById(req.user.id).select("-password");
+    const user = await User.findById(req.user.id).select("-password").populate({
+      path: "cartItems.product",
+      select: "_id name image category offerPrice price inStock",
+    });
+
     if (!user) {
       return res.status(401).json({ message: "Người dùng không tồn tại" });
+    }
+
+    const validCartItems = user.cartItems.filter(
+      (item) => item.product !== null,
+    );
+
+    if (validCartItems.length !== user.cartItems.length) {
+      user.cartItems = validCartItems;
+      await user.save();
     }
 
     return res.status(200).json({
@@ -114,12 +115,6 @@ export const isAuth = async (req, res) => {
 
 export const logout = async (_req, res) => {
   try {
-    res.clearCookie("token", {
-      httpOnly: true,
-      sameSite: "strict",
-      secure: process.env.NODE_ENV === "production",
-    });
-
     return res.status(200).json({
       message: "Đăng xuất thành công",
       success: true,
@@ -139,9 +134,33 @@ export const updateCart = async (req, res) => {
       return res.status(400).json({ message: "Dữ liệu giỏ hàng không hợp lệ" });
     }
 
+    const validatedCartItems = [];
+
+    for (const item of cartItems) {
+      if (!item.product || item.quantity <= 0) {
+        continue;
+      }
+
+      if (!mongoose.Types.ObjectId.isValid(item.product)) {
+        console.warn(`Invalid product ID: ${item.product}`);
+        continue;
+      }
+
+      const productExists = await Product.findById(item.product);
+      if (!productExists) {
+        console.warn(`Product not found: ${item.product}`);
+        continue;
+      }
+
+      validatedCartItems.push({
+        product: item.product,
+        quantity: item.quantity,
+      });
+    }
+
     const user = await User.findByIdAndUpdate(
       userId,
-      { cartItems },
+      { cartItems: validatedCartItems },
       { new: true },
     ).select("-password");
 

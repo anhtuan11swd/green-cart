@@ -1,35 +1,68 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { assets, dummyProducts } from "../assets/assets";
+import { assets } from "../assets/assets";
 import ProductCard from "../components/ProductCard";
-import { useAppContext } from "../context";
+import { useAppContext } from "../context/AppContext";
 
 // Trang chi tiết sản phẩm với gallery ảnh và sản phẩm liên quan
 const ProductDetails = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { formatVND, addToCart } = useAppContext();
+  const { formatVND, addToCart, getProductById, getAllProducts } =
+    useAppContext();
   const [product, setProduct] = useState(null);
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [allProducts, setAllProducts] = useState([]);
 
+  // Gọi API để lấy tất cả sản phẩm (cho sản phẩm liên quan)
   useEffect(() => {
-    const foundProduct = dummyProducts.find((p) => p._id === id);
-    if (foundProduct) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setProduct(foundProduct);
-    } else {
-      // Nếu không tìm thấy sản phẩm, chuyển về trang chủ
-      navigate("/");
+    const fetchAllProducts = async () => {
+      try {
+        const products = await getAllProducts();
+        setAllProducts(products);
+      } catch (err) {
+        console.error("Lỗi khi tải danh sách sản phẩm:", err);
+      }
+    };
+
+    fetchAllProducts();
+  }, [getAllProducts]);
+
+  // Gọi API để lấy chi tiết sản phẩm
+  useEffect(() => {
+    const fetchProduct = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        const foundProduct = await getProductById(id);
+        setProduct(foundProduct);
+      } catch (err) {
+        console.error("Lỗi khi tải chi tiết sản phẩm:", err);
+        setError("Không thể tải thông tin sản phẩm. Vui lòng thử lại sau.");
+        // Nếu không tìm thấy sản phẩm, chuyển về trang chủ
+        setTimeout(() => navigate("/"), 3000);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (id) {
+      fetchProduct();
     }
-  }, [id, navigate]);
+  }, [id, navigate, getProductById]);
 
   // Tính toán sản phẩm liên quan dựa trên sản phẩm hiện tại
   const relatedProducts = useMemo(() => {
-    if (!product) return [];
-    return dummyProducts
-      .filter((p) => p.category === product.category && p._id !== product._id)
+    if (!product || !allProducts.length) return [];
+    return allProducts
+      .filter(
+        (p) =>
+          p.category === product.category && p._id !== product._id && p.inStock,
+      )
       .slice(0, 5);
-  }, [product]);
+  }, [product, allProducts]);
 
   const handleAddToCart = async () => {
     if (!product) return;
@@ -51,12 +84,44 @@ const ProductDetails = () => {
     }
   };
 
-  if (!product) {
+  // Hiển thị loading state
+  if (loading) {
     return (
       <div className="flex justify-center items-center min-h-96">
         <div className="text-center">
           <div className="mx-auto border-primary border-b-2 rounded-full w-12 h-12 animate-spin"></div>
           <p className="mt-4 text-gray-600">Đang tải sản phẩm...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Hiển thị error state
+  if (error) {
+    return (
+      <div className="flex justify-center items-center min-h-96">
+        <div className="text-center">
+          <p className="text-red-500 text-lg">{error}</p>
+          <button
+            className="mt-4 bg-primary hover:bg-primary-dull px-6 py-2 text-white rounded transition-colors"
+            onClick={() => window.location.reload()}
+            type="button"
+          >
+            Thử lại
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  if (!product) {
+    return (
+      <div className="flex justify-center items-center min-h-96">
+        <div className="text-center">
+          <p className="text-gray-600 text-lg">Không tìm thấy sản phẩm</p>
+          <p className="text-sm text-gray-500 mt-2">
+            Đang chuyển về trang chủ...
+          </p>
         </div>
       </div>
     );

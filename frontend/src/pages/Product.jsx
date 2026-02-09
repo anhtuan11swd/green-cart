@@ -1,14 +1,34 @@
-import { useMemo } from "react";
-import { dummyProducts } from "../assets/assets";
+import { useEffect, useMemo, useState } from "react";
 import ProductCard from "../components/ProductCard";
 import { useAppContext } from "../context/AppContext";
 
 const Product = () => {
-  const { searchTerm } = useAppContext();
+  const { searchTerm, getAllProducts } = useAppContext();
+  const [products, setProducts] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  // Gọi API để lấy danh sách sản phẩm
+  useEffect(() => {
+    const fetchProducts = async () => {
+      try {
+        setLoading(true);
+        const allProducts = await getAllProducts();
+        setProducts(allProducts);
+      } catch (err) {
+        console.error("Lỗi khi tải sản phẩm:", err);
+        setError("Không thể tải danh sách sản phẩm. Vui lòng thử lại sau.");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchProducts();
+  }, [getAllProducts]);
 
   // Lọc sản phẩm có inStock = true và tìm kiếm theo tên
   const filteredProducts = useMemo(() => {
-    const inStockProducts = dummyProducts.filter((product) => product.inStock);
+    const inStockProducts = products.filter((product) => product.inStock);
 
     if (searchTerm.trim() === "") {
       return inStockProducts;
@@ -17,7 +37,49 @@ const Product = () => {
         product.name.toLowerCase().includes(searchTerm.toLowerCase()),
       );
     }
-  }, [searchTerm]);
+  }, [products, searchTerm]);
+
+  // Hiển thị loading state
+  if (loading) {
+    return (
+      <div className="flex flex-col mt-16">
+        <div className="flex flex-col items-end w-max">
+          <p className="font-medium text-2xl uppercase">Tất cả sản phẩm</p>
+          <div className="bg-primary rounded-full w-16 h-0.5"></div>
+        </div>
+        <div className="flex justify-center items-center min-h-96 mt-6">
+          <div className="text-center">
+            <div className="mx-auto border-primary border-b-2 rounded-full w-12 h-12 animate-spin"></div>
+            <p className="mt-4 text-gray-600">Đang tải sản phẩm...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Hiển thị error state
+  if (error) {
+    return (
+      <div className="flex flex-col mt-16">
+        <div className="flex flex-col items-end w-max">
+          <p className="font-medium text-2xl uppercase">Tất cả sản phẩm</p>
+          <div className="bg-primary rounded-full w-16 h-0.5"></div>
+        </div>
+        <div className="flex justify-center items-center min-h-96 mt-6">
+          <div className="text-center">
+            <p className="text-red-500 text-lg">{error}</p>
+            <button
+              className="mt-4 bg-primary hover:bg-primary-dull px-6 py-2 text-white rounded transition-colors"
+              onClick={() => window.location.reload()}
+              type="button"
+            >
+              Thử lại
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col mt-16">

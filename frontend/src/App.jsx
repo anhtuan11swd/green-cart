@@ -5,6 +5,7 @@ import AddAddress from "./pages/AddAddress";
 import Cart from "./pages/Cart";
 import Home from "./pages/Home";
 import Login from "./pages/Login";
+import MyOrders from "./pages/MyOrders";
 import Product from "./pages/Product";
 import ProductCategory from "./pages/ProductCategory";
 import ProductDetails from "./pages/ProductDetails";
@@ -23,6 +24,7 @@ function App() {
           <Route element={<AddAddress />} path="/add-address" />
           <Route element={<Cart />} path="/cart" />
           <Route element={<Login />} path="/login" />
+          <Route element={<MyOrders />} path="/orders" />
         </Routes>
       </div>
       <Footer />

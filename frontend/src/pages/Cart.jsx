@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import toast from "react-hot-toast";
 import { useAppContext } from "../context";
 
 // Trang giỏ hàng với chức năng quản lý sản phẩm và đặt hàng
@@ -9,7 +10,10 @@ const Cart = () => {
     cartItems,
     updateCart,
     removeFromCart,
+    clearCart,
+    syncCart,
     getCartAmount,
+    userToken,
   } = useAppContext();
   const [addresses, setAddresses] = useState([]);
   const [selectedAddress, setSelectedAddress] = useState("");
@@ -18,12 +22,14 @@ const Cart = () => {
 
   useEffect(() => {
     const loadAddresses = async () => {
+      if (!userToken) return;
+
       try {
         const response = await fetch(
-          `${import.meta.env.VITE_BACKEND_URL}/api/user/addresses`,
+          `${import.meta.env.VITE_BACKEND_URL}/api/user/address/get`,
           {
             headers: {
-              Authorization: `Bearer ${localStorage.getItem("token")}`,
+              Authorization: `Bearer ${userToken}`,
             },
           },
         );
@@ -42,7 +48,7 @@ const Cart = () => {
     };
 
     loadAddresses();
-  }, []);
+  }, [userToken]);
 
   // Tính tổng tiền
   const calculateSubtotal = () => {
@@ -60,12 +66,12 @@ const Cart = () => {
   // Xử lý đặt hàng
   const handlePlaceOrder = async () => {
     if (!selectedAddress) {
-      alert("Vui lòng chọn địa chỉ giao hàng");
+      toast.error("Vui lòng chọn địa chỉ giao hàng");
       return;
     }
 
     if (cartItems.length === 0) {
-      alert("Giỏ hàng trống");
+      toast.error("Giỏ hàng trống");
       return;
     }
 
@@ -75,22 +81,17 @@ const Cart = () => {
       const orderData = {
         addressId: selectedAddress,
         items: cartItems.map((item) => ({
-          price: item.offerPrice,
-          productId: item._id,
+          product: item._id,
           quantity: item.quantity,
         })),
-        paymentMethod: paymentMethod,
-        subtotal: calculateSubtotal(),
-        tax: calculateTax(),
-        total: calculateTotal(),
       };
 
       const response = await fetch(
-        `${import.meta.env.VITE_BACKEND_URL}/api/order/create`,
+        `${import.meta.env.VITE_BACKEND_URL}/api/order/cod`,
         {
           body: JSON.stringify(orderData),
           headers: {
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
+            Authorization: `Bearer ${userToken}`,
             "Content-Type": "application/json",
           },
           method: "POST",
@@ -101,15 +102,17 @@ const Cart = () => {
 
       if (response.ok) {
         // Xóa giỏ hàng sau khi đặt hàng thành công
-        // Cart sẽ được xóa tự động qua context
-        alert("Đặt hàng thành công!");
+        clearCart();
+        // Sync cart rỗng với backend
+        await syncCart([]);
+        toast.success("Đặt hàng thành công!");
         navigate("/orders");
       } else {
-        alert(data.message || "Có lỗi xảy ra khi đặt hàng");
+        toast.error(data.message || "Có lỗi xảy ra khi đặt hàng");
       }
     } catch (error) {
       console.error("Error placing order:", error);
-      alert("Có lỗi xảy ra khi kết nối server");
+      toast.error("Có lỗi xảy ra khi kết nối server");
     } finally {
       setLoading(false);
     }
@@ -159,10 +162,10 @@ const Cart = () => {
 
         {/* Cart Items */}
         <div className="space-y-4 mt-4">
-          {cartItems.map((item) => (
+          {cartItems.map((item, index) => (
             <div
               className="items-center grid grid-cols-[2fr_1fr_1fr] pt-3 pb-4 border-gray-100 border-b font-medium text-sm md:text-base"
-              key={item._id}
+              key={item._id || `cart-item-${index}`}
             >
               {/* Product Details */}
               <div className="flex items-center gap-3 md:gap-6">
@@ -170,7 +173,7 @@ const Cart = () => {
                   <img
                     alt={`Ảnh sản phẩm ${item.name}`}
                     className="rounded max-w-full h-full object-cover"
-                    src={item.image[0]}
+                    src={item.image?.[0] || "/placeholder-image.jpg"}
                   />
                 </div>
                 <div>
@@ -191,7 +194,7 @@ const Cart = () => {
                       >
                         {[...Array(9)].map((_, i) => (
                           <option
-                            key={`qty-${item._id}-${i + 1}`}
+                            key={`qty-${item._id || `item-${index}`}-${i + 1}`}
                             value={i + 1}
                           >
                             {i + 1}
@@ -302,8 +305,11 @@ const Cart = () => {
                 onChange={(e) => setSelectedAddress(e.target.value)}
                 value={selectedAddress}
               >
-                {addresses.map((address) => (
-                  <option key={address._id} value={address._id}>
+                {addresses.map((address, index) => (
+                  <option
+                    key={address._id || `address-${index}`}
+                    value={address._id}
+                  >
                     {address.firstName} {address.lastName}, {address.street},{" "}
                     {address.city}
                   </option>

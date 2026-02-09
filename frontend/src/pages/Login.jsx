@@ -1,4 +1,5 @@
 import { useContext, useState } from "react";
+import toast from "react-hot-toast";
 import { useNavigate } from "react-router-dom";
 import { AppContext } from "../context/AppContext";
 
@@ -11,7 +12,7 @@ const Login = () => {
     password: "",
   });
   const [loading, setLoading] = useState(false);
-  const { setUser } = useContext(AppContext);
+  const { loginUser, registerUser } = useContext(AppContext);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -26,35 +27,21 @@ const Login = () => {
     setLoading(true);
 
     try {
-      const endpoint = isLogin ? "/api/user/login" : "/api/user/register";
-      const payload = isLogin
-        ? { email: formData.email, password: formData.password }
-        : formData;
-
-      const response = await fetch(
-        `${import.meta.env.VITE_BACKEND_URL}${endpoint}`,
-        {
-          body: JSON.stringify(payload),
-          headers: {
-            "Content-Type": "application/json",
-          },
-          method: "POST",
-        },
-      );
-
-      const data = await response.json();
-
-      if (response.ok) {
-        setUser(data.user);
-        localStorage.setItem("token", data.token);
-        // Redirect to home page after successful login
-        navigate("/");
+      if (isLogin) {
+        await loginUser(formData.email, formData.password);
+        toast.success("Đăng nhập thành công!");
       } else {
-        alert(data.message || "Có lỗi xảy ra");
+        await registerUser(formData.name, formData.email, formData.password);
+        toast.success("Đăng ký thành công!");
       }
+
+      // Redirect to home page after successful authentication
+      navigate("/");
     } catch (error) {
+      const errorMessage =
+        error.response?.data?.message || "Có lỗi xảy ra khi kết nối server";
+      toast.error(errorMessage);
       console.error("Lỗi:", error);
-      alert("Có lỗi xảy ra khi kết nối server");
     } finally {
       setLoading(false);
     }

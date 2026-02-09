@@ -1,3 +1,4 @@
+import toast from "react-hot-toast";
 import { useNavigate } from "react-router-dom";
 import { assets } from "../assets/assets";
 import { useAppContext } from "../context";
@@ -14,8 +15,10 @@ const ProductCard = ({ product }) => {
   const handleAddToCart = async () => {
     try {
       await addToCart(product._id);
+      toast.success("Đã thêm sản phẩm vào giỏ hàng!");
     } catch (error) {
       console.error("Lỗi khi thêm sản phẩm vào giỏ:", error);
+      toast.error("Không thể thêm sản phẩm vào giỏ hàng");
     }
   };
 

@@ -123,7 +123,9 @@ const Orders = () => {
                     {/* Price */}
                     <div className="flex items-center col-span-2">
                       <p className="font-medium text-lg">
-                        {formatVND(order.amount)}
+                        {formatVND(
+                          (item.offerPrice || item.price) * item.quantity,
+                        )}
                       </p>
                     </div>
 

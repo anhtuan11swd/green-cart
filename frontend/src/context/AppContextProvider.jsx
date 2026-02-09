@@ -11,9 +11,14 @@ const api = axios.create({
 // Thiết lập interceptor ngay khi module được load
 api.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem("sellerToken");
-    if (token) {
-      config.headers.Authorization = token;
+    // Ưu tiên userToken, nếu không có thì dùng sellerToken
+    const userToken = localStorage.getItem("userToken");
+    const sellerToken = localStorage.getItem("sellerToken");
+
+    if (userToken) {
+      config.headers.Authorization = `Bearer ${userToken}`;
+    } else if (sellerToken) {
+      config.headers.Authorization = sellerToken;
     }
     return config;
   },
@@ -34,6 +39,9 @@ const formatVND = (price) => {
 export const AppContextProvider = ({ children }) => {
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
+  const [userToken, setUserToken] = useState(() => {
+    return localStorage.getItem("userToken") || null;
+  });
   const [sellerToken, setSellerToken] = useState(() => {
     return localStorage.getItem("sellerToken") || null;
   });
@@ -44,6 +52,15 @@ export const AppContextProvider = ({ children }) => {
   const [cartItems, setCartItems] = useState(() => {
     return JSON.parse(localStorage.getItem("cart") || "[]");
   });
+
+  // Lưu userToken vào localStorage khi thay đổi
+  useEffect(() => {
+    if (userToken) {
+      localStorage.setItem("userToken", userToken);
+    } else {
+      localStorage.removeItem("userToken");
+    }
+  }, [userToken]);
 
   // Lưu sellerToken vào localStorage khi thay đổi
   useEffect(() => {
@@ -63,10 +80,121 @@ export const AppContextProvider = ({ children }) => {
     window.dispatchEvent(new Event("cartUpdated"));
   }, [cartItems]);
 
+  // Sync cart với backend
+  const syncCart = useCallback(
+    async (items) => {
+      try {
+        if (!userToken) return;
+
+        const cartData = items.map((item) => ({
+          product: item._id,
+          quantity: item.quantity,
+        }));
+
+        const response = await api.post("/api/user/cart/update", {
+          cartItems: cartData,
+        });
+
+        return response.data;
+      } catch (error) {
+        console.error("Lỗi khi đồng bộ giỏ hàng:", error);
+        throw error;
+      }
+    },
+    [userToken],
+  );
+
+  // Sync cart với backend khi cartItems thay đổi và có userToken
+  useEffect(() => {
+    const syncCartWithBackend = async () => {
+      try {
+        if (userToken && cartItems.length >= 0) {
+          await syncCart(cartItems);
+        }
+      } catch (error) {
+        console.error("Lỗi đồng bộ cart với backend:", error);
+        // Không throw error để tránh crash app
+      }
+    };
+
+    // Debounce sync để tránh gọi API quá nhiều lần
+    const timeoutId = setTimeout(syncCartWithBackend, 500);
+    return () => clearTimeout(timeoutId);
+  }, [cartItems, userToken, syncCart]);
+
   // Lưu isSeller state vào localStorage
   useEffect(() => {
     localStorage.setItem("isSeller", JSON.stringify(isSeller));
   }, [isSeller]);
+
+  // Load cart từ user data (DB format) và convert sang frontend format
+  const loadCartFromUserData = useCallback(async (userCartItems) => {
+    try {
+      if (!userCartItems || userCartItems.length === 0) {
+        setCartItems([]);
+        return;
+      }
+
+      const convertedCartItems = userCartItems
+        .map((item) => {
+          const product = item.product;
+
+          if (!product || typeof product !== "object") {
+            console.warn("Invalid cart item - product not populated:", item);
+            return null;
+          }
+
+          if (!product._id) {
+            console.warn("Invalid cart item - missing product ID:", item);
+            return null;
+          }
+
+          return {
+            _id: product._id,
+            category: product.category,
+            image: product.image,
+            name: product.name,
+            offerPrice: product.offerPrice,
+            quantity: item.quantity || 1,
+          };
+        })
+        .filter((item) => item !== null);
+
+      setCartItems(convertedCartItems);
+    } catch (error) {
+      console.error("Lỗi khi load cart từ user data:", error);
+      setCartItems([]);
+    }
+  }, []);
+
+  // Kiểm tra authentication khi component mount
+  useEffect(() => {
+    const checkAuthStatus = async () => {
+      try {
+        if (!userToken) return;
+
+        const response = await api.get("/api/user/is-auth", {
+          headers: {
+            Authorization: `Bearer ${userToken}`,
+          },
+        });
+        const { user } = response.data;
+        setUser(user);
+
+        // Load cart từ user data khi app startup
+        if (user.cartItems && user.cartItems.length > 0) {
+          await loadCartFromUserData(user.cartItems);
+        }
+      } catch (error) {
+        console.error("Lỗi kiểm tra authentication:", error);
+        // Nếu token không hợp lệ, clear user data
+        setUserToken(null);
+        setUser(null);
+      }
+    };
+
+    checkAuthStatus();
+  }, [userToken, loadCartFromUserData]);
 
   // Function để logout seller
   const logoutSeller = useCallback(() => {
@@ -74,11 +202,73 @@ export const AppContextProvider = ({ children }) => {
     setIsSeller(false);
   }, []);
 
+  // Function để login user
+  const loginUser = useCallback(
+    async (email, password) => {
+      try {
+        const response = await api.post("/api/user/login", { email, password });
+        const { token, user } = response.data;
+        setUserToken(token);
+        setUser(user);
+
+        // Load cart từ user data sau khi login
+        if (user.cartItems && user.cartItems.length > 0) {
+          await loadCartFromUserData(user.cartItems);
+        } else {
+          // Nếu user chưa có cart, giữ cart local hiện tại
+          // Không cần làm gì vì cartItems đã có từ localStorage
+        }
+
+        return { success: true };
+      } catch (error) {
+        console.error("Lỗi đăng nhập:", error);
+        throw error;
+      }
+    },
+    [loadCartFromUserData],
+  );
+
+  // Function để register user
+  const registerUser = useCallback(async (name, email, password) => {
+    try {
+      const response = await api.post("/api/user/register", {
+        email,
+        name,
+        password,
+      });
+      const { token, user } = response.data;
+      setUserToken(token);
+      setUser(user);
+
+      // User mới đăng ký chưa có cart, giữ cart local hiện tại
+      // Cart sẽ được sync lên DB qua useEffect sau
+
+      return { success: true };
+    } catch (error) {
+      console.error("Lỗi đăng ký:", error);
+      throw error;
+    }
+  }, []);
+
+  // Function để logout user
+  const logoutUser = useCallback(async () => {
+    try {
+      await api.get("/api/user/logout");
+    } catch (error) {
+      console.error("Lỗi đăng xuất:", error);
+    } finally {
+      setUserToken(null);
+      setUser(null);
+      // Clear cart khi logout
+      setCartItems([]);
+    }
+  }, []);
+
   // Thêm sản phẩm vào giỏ hàng
   const addToCart = async (itemId) => {
     try {
       const response = await api.get(`/api/product/${itemId}`);
-      const product = response.data;
+      const product = response.data.product || response.data;
 
       setCartItems((prevCart) => {
         const existingItem = prevCart.find((item) => item._id === itemId);
@@ -145,6 +335,11 @@ export const AppContextProvider = ({ children }) => {
     );
   };
 
+  // Xóa toàn bộ giỏ hàng
+  const clearCart = () => {
+    setCartItems([]);
+  };
+
   // Lấy tổng số lượng sản phẩm trong giỏ
   const getCartCount = () => {
     return cartItems.reduce((sum, item) => sum + item.quantity, 0);
@@ -189,6 +384,16 @@ export const AppContextProvider = ({ children }) => {
     }
   };
 
+  const getProductById = async (productId) => {
+    try {
+      const response = await api.get(`/api/product/${productId}`);
+      return response.data.product;
+    } catch (error) {
+      console.error("Lỗi khi lấy chi tiết sản phẩm:", error);
+      throw error;
+    }
+  };
+
   const toggleProductStock = async (productId) => {
     try {
       const response = await api.post(`/api/product/stock/${productId}`);
@@ -205,23 +410,31 @@ export const AppContextProvider = ({ children }) => {
     api, // Axios instance với Bearer token
     // Cart functions
     cartItems,
+    clearCart,
     formatVND,
     getAllProducts,
     getCartAmount,
     getCartCount,
+    getProductById,
     isSeller,
+    loadCartFromUserData,
     loginSeller,
+    loginUser,
     logoutSeller,
+    logoutUser,
     navigate,
+    registerUser,
     removeFromCart,
     searchTerm,
     sellerToken,
     setIsSeller,
     setSearchTerm,
     setUser,
+    syncCart,
     toggleProductStock,
     updateCart,
     user,
+    userToken,
   };
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
