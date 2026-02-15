@@ -183,240 +183,333 @@ const AddProduct = () => {
   };
 
   return (
-    <div className="no-scrollbar flex-1 h-[95vh] overflow-y-scroll flex flex-col justify-between">
-      <form className="md:p-10 p-4 space-y-5 max-w-lg" onSubmit={handleSubmit}>
-        {/* Tải lên hình ảnh sản phẩm */}
-        <div>
-          <p className="text-base font-medium">
-            Hình ảnh sản phẩm <span className="text-red-500">*</span>
+    <div className="flex-1 h-[calc(100vh-65px)] overflow-y-auto bg-gray-50">
+      <div className="max-w-3xl mx-auto p-4 md:p-8">
+        {/* Header */}
+        <div className="mb-8">
+          <h1 className="text-2xl font-bold text-gray-900">
+            Thêm sản phẩm mới
+          </h1>
+          <p className="text-gray-500 mt-1">
+            Điền thông tin sản phẩm để thêm vào cửa hàng
           </p>
-          <div className="flex flex-wrap items-center gap-3 mt-2">
-            {[0, 1, 2, 3].map((index) => (
-              <div key={index}>
-                <label htmlFor={`image${index}`}>
-                  <input
-                    accept="image/png, image/jpeg, image/jpg, image/webp"
-                    hidden
-                    id={`image${index}`}
-                    onChange={(e) => handleImageChange(index, e)}
-                    type="file"
-                  />
-                  <img
-                    alt=""
-                    className="max-w-24 cursor-pointer"
-                    height="100"
-                    src={
-                      files[index]
-                        ? URL.createObjectURL(files[index])
-                        : assets.upload_area
-                    }
-                    width="100"
-                  />
-                </label>
-                {errors[`image${index}`] && (
-                  <p className="text-red-500 text-xs mt-1">
-                    {errors[`image${index}`]}
-                  </p>
-                )}
-              </div>
-            ))}
-          </div>
-          {errors.images && (
-            <p className="text-red-500 text-sm mt-2">{errors.images}</p>
-          )}
         </div>
 
-        {/* Tên sản phẩm */}
-        <div className="flex flex-col gap-1 max-w-md">
-          <label className="text-base font-medium" htmlFor="product-name">
-            Tên sản phẩm <span className="text-red-500">*</span>
-          </label>
-          <input
-            className={`outline-none md:py-2.5 py-2 px-3 rounded border ${errors.name ? "border-red-500" : "border-gray-500/40"}`}
-            id="product-name"
-            onChange={(e) => {
-              setName(e.target.value);
-              // Xóa lỗi khi user bắt đầu nhập
-              if (errors.name) {
-                setErrors((prev) => {
-                  const newErrors = { ...prev };
-                  delete newErrors.name;
-                  return newErrors;
-                });
-              }
-            }}
-            placeholder="Nhập tên sản phẩm"
-            required
-            type="text"
-            value={name}
-          />
-          {errors.name && <p className="text-red-500 text-sm">{errors.name}</p>}
-        </div>
-
-        {/* Mô tả sản phẩm */}
-        <div className="flex flex-col gap-1 max-w-md">
-          <label
-            className="text-base font-medium"
-            htmlFor="product-description"
-          >
-            Mô tả sản phẩm <span className="text-red-500">*</span>
-          </label>
-          <textarea
-            className={`outline-none md:py-2.5 py-2 px-3 rounded border resize-none ${errors.description ? "border-red-500" : "border-gray-500/40"}`}
-            id="product-description"
-            onChange={(e) => {
-              setDescription(e.target.value);
-              // Xóa lỗi khi user bắt đầu nhập
-              if (errors.description) {
-                setErrors((prev) => {
-                  const newErrors = { ...prev };
-                  delete newErrors.description;
-                  return newErrors;
-                });
-              }
-            }}
-            placeholder="Nhập mô tả chi tiết về sản phẩm&#10;Mỗi dòng sẽ là một điểm riêng biệt"
-            rows="4"
-            value={description}
-          />
-          {description.trim() && (
-            <div className="text-xs text-gray-500 mt-1">
-              Mô tả sẽ được tách thành:{" "}
-              {
-                description
-                  .trim()
-                  .split("\n")
-                  .filter((line) => line.trim()).length
-              }{" "}
-              điểm
+        {/* Form Card */}
+        <form
+          className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 space-y-6"
+          onSubmit={handleSubmit}
+        >
+          {/* Tải lên hình ảnh sản phẩm */}
+          <div className="space-y-3">
+            <p className="text-base font-semibold text-gray-900">
+              Hình ảnh sản phẩm <span className="text-red-500">*</span>
+            </p>
+            <div className="flex flex-wrap items-center gap-4">
+              {[0, 1, 2, 3].map((index) => (
+                <div key={index}>
+                  <label
+                    className="block cursor-pointer"
+                    htmlFor={`image${index}`}
+                  >
+                    <input
+                      accept="image/png, image/jpeg, image/jpg, image/webp"
+                      hidden
+                      id={`image${index}`}
+                      onChange={(e) => handleImageChange(index, e)}
+                      type="file"
+                    />
+                    <div
+                      className={`w-24 h-24 rounded-xl border-2 border-dashed transition-all duration-200 overflow-hidden ${
+                        files[index]
+                          ? "border-primary bg-primary/5"
+                          : "border-gray-300 hover:border-primary/50 hover:bg-gray-50"
+                      }`}
+                    >
+                      <img
+                        alt=""
+                        className="w-full h-full object-cover"
+                        src={
+                          files[index]
+                            ? URL.createObjectURL(files[index])
+                            : assets.upload_area
+                        }
+                      />
+                    </div>
+                  </label>
+                  {errors[`image${index}`] && (
+                    <p className="text-red-500 text-xs mt-1">
+                      {errors[`image${index}`]}
+                    </p>
+                  )}
+                </div>
+              ))}
             </div>
-          )}
-          {errors.description && (
-            <p className="text-red-500 text-sm">{errors.description}</p>
-          )}
-        </div>
+            {errors.images && (
+              <p className="text-red-500 text-sm">{errors.images}</p>
+            )}
+            <p className="text-xs text-gray-400">
+              Tải lên tối đa 4 hình ảnh (JPG, PNG, WebP)
+            </p>
+          </div>
 
-        {/* Danh mục */}
-        <div className="w-full flex flex-col gap-1">
-          <label className="text-base font-medium" htmlFor="category">
-            Danh mục <span className="text-red-500">*</span>
-          </label>
-          <select
-            className={`outline-none md:py-2.5 py-2 px-3 rounded border ${errors.category ? "border-red-500" : "border-gray-500/40"}`}
-            id="category"
-            onChange={(e) => {
-              setCategory(e.target.value);
-              // Xóa lỗi khi user chọn
-              if (errors.category) {
-                setErrors((prev) => {
-                  const newErrors = { ...prev };
-                  delete newErrors.category;
-                  return newErrors;
-                });
-              }
-            }}
-            value={category}
-          >
-            <option value="">Chọn danh mục</option>
-            {categories.map((cat) => (
-              <option key={cat.path} value={cat.path}>
-                {cat.text}
-              </option>
-            ))}
-          </select>
-          {errors.category && (
-            <p className="text-red-500 text-sm">{errors.category}</p>
-          )}
-        </div>
+          <hr className="border-gray-100" />
 
-        {/* Giá gốc và giá khuyến mãi */}
-        <div className="flex items-start gap-5 flex-wrap">
-          <div className="flex-1 flex flex-col gap-1 min-w-32">
-            <label className="text-base font-medium" htmlFor="product-price">
-              Giá gốc <span className="text-red-500">*</span>
+          {/* Tên sản phẩm */}
+          <div className="space-y-2">
+            <label
+              className="text-sm font-semibold text-gray-900"
+              htmlFor="product-name"
+            >
+              Tên sản phẩm <span className="text-red-500">*</span>
             </label>
             <input
-              className={`outline-none md:py-2.5 py-2 px-3 rounded border ${errors.price ? "border-red-500" : "border-gray-500/40"}`}
-              id="product-price"
-              min="1"
+              className={`w-full px-4 py-3 rounded-xl border bg-gray-50 focus:bg-white ${errors.name ? "border-red-500 focus:border-red-500 focus:ring-2 focus:ring-red-500/20" : "border-gray-200 focus:border-primary focus:ring-2 focus:ring-primary/20"} outline-none transition-all duration-200`}
+              id="product-name"
               onChange={(e) => {
-                setPrice(e.target.value);
-                // Xóa lỗi khi user bắt đầu nhập
-                if (errors.price) {
+                setName(e.target.value);
+                if (errors.name) {
                   setErrors((prev) => {
                     const newErrors = { ...prev };
-                    delete newErrors.price;
+                    delete newErrors.name;
                     return newErrors;
                   });
                 }
               }}
-              placeholder="0"
+              placeholder="Nhập tên sản phẩm"
               required
-              type="number"
-              value={price}
+              type="text"
+              value={name}
             />
-            {price && !errors.price && (
-              <p className="text-sm text-gray-600">
-                {formatPriceDisplay(price)}
-              </p>
-            )}
-            {errors.price && (
-              <p className="text-red-500 text-sm">{errors.price}</p>
+            {errors.name && (
+              <p className="text-red-500 text-sm">{errors.name}</p>
             )}
           </div>
-          <div className="flex-1 flex flex-col gap-1 min-w-32">
-            <label className="text-base font-medium" htmlFor="offer-price">
-              Giá khuyến mãi <span className="text-red-500">*</span>
+
+          {/* Mô tả sản phẩm */}
+          <div className="space-y-2">
+            <label
+              className="text-sm font-semibold text-gray-900"
+              htmlFor="product-description"
+            >
+              Mô tả sản phẩm <span className="text-red-500">*</span>
             </label>
-            <input
-              className={`outline-none md:py-2.5 py-2 px-3 rounded border ${errors.offerPrice ? "border-red-500" : "border-gray-500/40"}`}
-              id="offer-price"
-              min="1"
+            <textarea
+              className={`w-full px-4 py-3 rounded-xl border bg-gray-50 focus:bg-white resize-none ${errors.description ? "border-red-500 focus:border-red-500 focus:ring-2 focus:ring-red-500/20" : "border-gray-200 focus:border-primary focus:ring-2 focus:ring-primary/20"} outline-none transition-all duration-200`}
+              id="product-description"
               onChange={(e) => {
-                setOfferPrice(e.target.value);
-                // Xóa lỗi khi user bắt đầu nhập
-                if (errors.offerPrice) {
+                setDescription(e.target.value);
+                if (errors.description) {
                   setErrors((prev) => {
                     const newErrors = { ...prev };
-                    delete newErrors.offerPrice;
+                    delete newErrors.description;
                     return newErrors;
                   });
                 }
               }}
-              placeholder="0"
-              required
-              type="number"
-              value={offerPrice}
+              placeholder="Nhập mô tả chi tiết về sản phẩm&#10;Mỗi dòng sẽ là một điểm riêng biệt"
+              rows="4"
+              value={description}
             />
-            {offerPrice && !errors.offerPrice && (
-              <p className="text-sm text-gray-600">
-                {formatPriceDisplay(offerPrice)}
-              </p>
+            {description.trim() && (
+              <div className="text-xs text-gray-500">
+                Mô tả sẽ được tách thành:{" "}
+                {
+                  description
+                    .trim()
+                    .split("\n")
+                    .filter((line) => line.trim()).length
+                }{" "}
+                điểm
+              </div>
             )}
-            {errors.offerPrice && (
-              <p className="text-red-500 text-sm">{errors.offerPrice}</p>
+            {errors.description && (
+              <p className="text-red-500 text-sm">{errors.description}</p>
             )}
           </div>
-        </div>
 
-        {/* Nút gửi */}
-        <div className="flex flex-col gap-2">
-          <button
-            className={`px-8 py-2.5 font-medium rounded transition-colors ${
-              isSubmitting
-                ? "bg-gray-400 cursor-not-allowed"
-                : "bg-primary hover:bg-primary/90"
-            } text-white`}
-            disabled={isSubmitting}
-            type="submit"
-          >
-            {isSubmitting ? "ĐANG THÊM..." : "THÊM SẢN PHẨM"}
-          </button>
-          {errors.submit && (
-            <p className="text-red-500 text-sm">{errors.submit}</p>
-          )}
-        </div>
-      </form>
+          {/* Danh mục */}
+          <div className="space-y-2">
+            <label
+              className="text-sm font-semibold text-gray-900"
+              htmlFor="category"
+            >
+              Danh mục <span className="text-red-500">*</span>
+            </label>
+            <select
+              className={`w-full px-4 py-3 rounded-xl border bg-gray-50 focus:bg-white ${errors.category ? "border-red-500 focus:border-red-500 focus:ring-2 focus:ring-red-500/20" : "border-gray-200 focus:border-primary focus:ring-2 focus:ring-primary/20"} outline-none transition-all duration-200 cursor-pointer`}
+              id="category"
+              onChange={(e) => {
+                setCategory(e.target.value);
+                if (errors.category) {
+                  setErrors((prev) => {
+                    const newErrors = { ...prev };
+                    delete newErrors.category;
+                    return newErrors;
+                  });
+                }
+              }}
+              value={category}
+            >
+              <option value="">Chọn danh mục</option>
+              {categories.map((cat) => (
+                <option key={cat.path} value={cat.path}>
+                  {cat.text}
+                </option>
+              ))}
+            </select>
+            {errors.category && (
+              <p className="text-red-500 text-sm">{errors.category}</p>
+            )}
+          </div>
+
+          {/* Giá gốc và giá khuyến mãi */}
+          <div className="grid md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <label
+                className="text-sm font-semibold text-gray-900"
+                htmlFor="product-price"
+              >
+                Giá gốc <span className="text-red-500">*</span>
+              </label>
+              <div className="relative">
+                <input
+                  className={`w-full px-4 py-3 rounded-xl border bg-gray-50 focus:bg-white pr-16 ${errors.price ? "border-red-500 focus:border-red-500 focus:ring-2 focus:ring-red-500/20" : "border-gray-200 focus:border-primary focus:ring-2 focus:ring-primary/20"} outline-none transition-all duration-200`}
+                  id="product-price"
+                  min="1"
+                  onChange={(e) => {
+                    setPrice(e.target.value);
+                    if (errors.price) {
+                      setErrors((prev) => {
+                        const newErrors = { ...prev };
+                        delete newErrors.price;
+                        return newErrors;
+                      });
+                    }
+                  }}
+                  placeholder="0"
+                  required
+                  type="number"
+                  value={price}
+                />
+                <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 text-sm">
+                  VND
+                </span>
+              </div>
+              {price && !errors.price && (
+                <p className="text-sm text-primary font-medium">
+                  {formatPriceDisplay(price)}
+                </p>
+              )}
+              {errors.price && (
+                <p className="text-red-500 text-sm">{errors.price}</p>
+              )}
+            </div>
+            <div className="space-y-2">
+              <label
+                className="text-sm font-semibold text-gray-900"
+                htmlFor="offer-price"
+              >
+                Giá khuyến mãi <span className="text-red-500">*</span>
+              </label>
+              <div className="relative">
+                <input
+                  className={`w-full px-4 py-3 rounded-xl border bg-gray-50 focus:bg-white pr-16 ${errors.offerPrice ? "border-red-500 focus:border-red-500 focus:ring-2 focus:ring-red-500/20" : "border-gray-200 focus:border-primary focus:ring-2 focus:ring-primary/20"} outline-none transition-all duration-200`}
+                  id="offer-price"
+                  min="1"
+                  onChange={(e) => {
+                    setOfferPrice(e.target.value);
+                    if (errors.offerPrice) {
+                      setErrors((prev) => {
+                        const newErrors = { ...prev };
+                        delete newErrors.offerPrice;
+                        return newErrors;
+                      });
+                    }
+                  }}
+                  placeholder="0"
+                  required
+                  type="number"
+                  value={offerPrice}
+                />
+                <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 text-sm">
+                  VND
+                </span>
+              </div>
+              {offerPrice && !errors.offerPrice && (
+                <p className="text-sm text-primary font-medium">
+                  {formatPriceDisplay(offerPrice)}
+                </p>
+              )}
+              {errors.offerPrice && (
+                <p className="text-red-500 text-sm">{errors.offerPrice}</p>
+              )}
+            </div>
+          </div>
+
+          {/* Nút gửi */}
+          <div className="pt-4">
+            <button
+              className={`w-full py-4 rounded-xl font-semibold transition-all duration-200 ${
+                isSubmitting
+                  ? "bg-gray-400 cursor-not-allowed text-gray-200"
+                  : "bg-primary hover:bg-primary/90 hover:shadow-lg hover:shadow-primary/30 text-white cursor-pointer"
+              }`}
+              disabled={isSubmitting}
+              type="submit"
+            >
+              {isSubmitting ? (
+                <span className="flex items-center justify-center gap-2">
+                  <svg
+                    aria-hidden="true"
+                    className="animate-spin h-5 w-5"
+                    viewBox="0 0 24 24"
+                  >
+                    <circle
+                      className="opacity-25"
+                      cx="12"
+                      cy="12"
+                      fill="none"
+                      r="10"
+                      stroke="currentColor"
+                      strokeWidth="4"
+                    />
+                    <path
+                      className="opacity-75"
+                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                      fill="currentColor"
+                    />
+                  </svg>
+                  ĐANG THÊM SẢN PHẨM...
+                </span>
+              ) : (
+                <span className="flex items-center justify-center gap-2">
+                  <svg
+                    aria-hidden="true"
+                    className="w-5 h-5"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      d="M12 6v6m0 0v6m0-6h6m-6 0H6"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                    />
+                  </svg>
+                  THÊM SẢN PHẨM
+                </span>
+              )}
+            </button>
+            {errors.submit && (
+              <p className="text-red-500 text-sm text-center mt-3">
+                {errors.submit}
+              </p>
+            )}
+          </div>
+        </form>
+      </div>
     </div>
   );
 };
